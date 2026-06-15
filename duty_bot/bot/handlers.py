@@ -64,8 +64,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "Bot quản lý lịch trực\n\n"
         "Các lệnh:\n"
         "/add_personnel - Thêm CBCS (hội thoại)\n"
-        "/remove_personnel ID1 [ID2 ...] - Xoá CBCS\n"
-        "/clear_personnel - Xoá tất cả CBCS (nhập lại)\n"
+        "/xoa ID1 [ID2 ...] - Xoá CBCS\n"
+        "/xoa_all - Xoá tất cả CBCS (nhập lại)\n"
         "/list_personnel - Danh sách CBCS\n"
         "/exclude ID_NgàyBD_NgàyKT_LýDo - Khai báo nghỉ\n"
         "/gen MM/YYYY - Sinh lịch tháng\n"
@@ -105,9 +105,9 @@ async def clear_personnel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE
     await update.message.reply_text("Bạn có chắc muốn xoá TẤT CẢ CBCS?", reply_markup=delete_confirm_keyboard("all_personnel", 0))
 
 
-async def remove_personnel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def xoa_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not context.args:
-        await update.message.reply_text("Dùng: /remove_personnel ID1 [ID2 ID3 ...]")
+        await update.message.reply_text("Dùng: /xoa ID1 [ID2 ID3 ...]")
         return
     removed = []
     not_found = []
@@ -540,8 +540,8 @@ def setup_handlers() -> Application:
     app.add_handler(add_personnel_conv)
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("list_personnel", list_personnel))
-    app.add_handler(CommandHandler("remove_personnel", remove_personnel_cmd))
-    app.add_handler(CommandHandler("clear_personnel", clear_personnel_cmd))
+    app.add_handler(CommandHandler("xoa", xoa_cmd))
+    app.add_handler(CommandHandler("xoa_all", clear_personnel_cmd))
     app.add_handler(CommandHandler("exclude", exclude_cmd))
     app.add_handler(CommandHandler("gen", generate_cmd))
     app.add_handler(CommandHandler("week", week_cmd))

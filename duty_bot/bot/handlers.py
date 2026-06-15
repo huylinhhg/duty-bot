@@ -62,6 +62,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "Các lệnh:\n"
         "/add_personnel - Thêm CBCS (hội thoại)\n"
         "/remove_personnel ID - Xoá CBCS\n"
+        "/clear_personnel - Xoá tất cả CBCS (nhập lại)\n"
         "/list_personnel - Danh sách CBCS\n"
         "/exclude ID_NgàyBD_NgàyKT_LýDo - Khai báo nghỉ\n"
         "/gen MM/YYYY - Sinh lịch tháng\n"
@@ -95,6 +96,10 @@ async def list_personnel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             f"(Tổ: {p['group_name'] or 'N/A'}) {active}"
         )
     await update.message.reply_text("\n".join(lines))
+
+
+async def clear_personnel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text("Bạn có chắc muốn xoá TẤT CẢ CBCS?", reply_markup=delete_confirm_keyboard("all_personnel", 0))
 
 
 async def remove_personnel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -470,6 +475,11 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         repo.update_schedule(schedule_id, status="deployed")
         repo.add_audit_log("confirm_duty", "schedule", schedule_id, "{}")
         await query.edit_message_text(f"Đã xác nhận hoàn thành lịch #{schedule_id}.")
+    elif data.startswith("del_yes_all_personnel_"):
+        count = repo.delete_all_personnel()
+        await query.edit_message_text(f"Đã xoá {count} CBCS. Thêm lại bằng /add_personnel.")
+    elif data.startswith("del_no_all_personnel_"):
+        await query.edit_message_text("Đã huỷ.")
     elif data == "sch_cancel":
         await query.edit_message_text("Đã huỷ.")
     elif data.startswith("sch_page_"):
@@ -517,6 +527,7 @@ def setup_handlers() -> Application:
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("list_personnel", list_personnel))
     app.add_handler(CommandHandler("remove_personnel", remove_personnel_cmd))
+    app.add_handler(CommandHandler("clear_personnel", clear_personnel_cmd))
     app.add_handler(CommandHandler("exclude", exclude_cmd))
     app.add_handler(CommandHandler("gen", generate_cmd))
     app.add_handler(CommandHandler("week", week_cmd))

@@ -63,6 +63,12 @@ def delete_personnel(personnel_id: int) -> bool:
         return cur.rowcount > 0
 
 
+def delete_all_personnel() -> int:
+    with get_db() as conn:
+        cur = conn.execute("DELETE FROM personnel")
+        return cur.rowcount
+
+
 def add_group(name: str, description: str = "") -> int:
     with get_db() as conn:
         cur = conn.execute(

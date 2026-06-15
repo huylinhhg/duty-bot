@@ -6,7 +6,7 @@ import duty_bot.database.repository as repo
 
 logger = logging.getLogger(__name__)
 
-SHIFT_LABELS = {"sang": "Sáng", "chieu": "Chiều", "toi": "Tối", "ca1": "Ca 1", "ca2": "Ca 2", "ca3": "Ca 3"}
+SHIFT_LABELS = {"sang": "Sáng"}
 
 
 def weekly_report(year: int, week: int) -> str:

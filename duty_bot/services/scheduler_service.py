@@ -10,16 +10,16 @@ from duty_bot.models.entities import DutySchedule
 logger = logging.getLogger(__name__)
 
 WEEKLY_SHIFTS = {
-    0: ["sang", "chieu", "toi"],
-    1: ["sang", "chieu", "toi"],
-    2: ["sang", "chieu", "toi"],
-    3: ["sang", "chieu", "toi"],
-    4: ["sang", "chieu", "toi"],
-    5: ["sang", "chieu"],
+    0: ["sang"],
+    1: ["sang"],
+    2: ["sang"],
+    3: ["sang"],
+    4: ["sang"],
+    5: ["sang"],
     6: ["sang"],
 }
 
-SHIFT_LABELS = {"sang": "Sáng", "chieu": "Chiều", "toi": "Tối"}
+SHIFT_LABELS = {"sang": "Sáng"}
 
 
 def _get_next_weekday_date(year: int, month: int, day: int) -> datetime:
@@ -57,7 +57,7 @@ def generate_monthly_schedule(
 
     group_name = personnel_list[0]["group_name"] or "default"
     rotation: dict[str, int] = {}
-    for shift in ["sang", "chieu", "toi"]:
+    for shift in ["sang"]:
         state = repo.get_rotation_state(group_name, shift)
         rotation[shift] = state["last_position"] if state else 0
 
@@ -159,7 +159,7 @@ def generate_weekly_schedule(year: int, week: int) -> dict[str, Any]:
 
     group_name = personnel_list[0]["group_name"] or "default"
     rotation: dict[str, int] = {}
-    for shift in ["sang", "chieu", "toi"]:
+    for shift in ["sang"]:
         state = repo.get_rotation_state(group_name, shift)
         rotation[shift] = state["last_position"] if state else 0
 

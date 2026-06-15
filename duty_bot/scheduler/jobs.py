@@ -23,8 +23,7 @@ async def daily_reminder(context: ContextTypes.DEFAULT_TYPE) -> None:
 
     msg_parts = [f"Lịch trực hôm nay ({today_str}):"]
     for s in schedules:
-        shift_label = {"sang": "Sáng", "chieu": "Chiều", "toi": "Tối"}.get(s["shift"], s["shift"])
-        msg_parts.append(f"- {s.get('personnel_name', '?')} (ca {shift_label})")
+        msg_parts.append(f"- {s.get('personnel_name', '?')}")
     msg = "\n".join(msg_parts)
 
     for cid in chat_ids:
@@ -53,8 +52,7 @@ async def weekly_approval_check(context: ContextTypes.DEFAULT_TYPE) -> None:
 
     msg_parts = [f"Lịch trực tuần sau ({week_start} - {week_end}):"]
     for s in schedules:
-        shift_label = {"sang": "Sáng", "chieu": "Chiều", "toi": "Tối"}.get(s["shift"], s["shift"])
-        msg_parts.append(f"- {s['date']}: {s.get('personnel_name', '?')} (ca {shift_label})")
+        msg_parts.append(f"- {s['date']}: {s.get('personnel_name', '?')}")
     msg_parts.append("\nDùng /submit_approval để gửi duyệt.")
     msg = "\n".join(msg_parts)
 
@@ -102,6 +100,28 @@ async def confirmation_check(context: ContextTypes.DEFAULT_TYPE) -> None:
                 logger.error("Failed to send confirmation check: %s", e)
 
 
+async def tomorrow_reminder(context: ContextTypes.DEFAULT_TYPE) -> None:
+    tomorrow = (datetime.today() + timedelta(days=1)).strftime("%Y-%m-%d")
+    schedules = scheduler_service.get_schedules_by_date(tomorrow)
+    if not schedules:
+        return
+
+    chat_ids = [c.strip() for c in CHAT_IDS.split(",") if c.strip()]
+    if not chat_ids:
+        return
+
+    msg_parts = [f"Nhắc lịch trực ngày mai ({tomorrow}):"]
+    for s in schedules:
+        msg_parts.append(f"- {s.get('personnel_name', '?')}")
+    msg = "\n".join(msg_parts)
+
+    for cid in chat_ids:
+        try:
+            await context.bot.send_message(chat_id=int(cid), text=msg)
+        except Exception as e:
+            logger.error("Failed to send tomorrow reminder to %s: %s", cid, e)
+
+
 def setup_jobs(app: Application) -> None:
     tz = pytz.timezone(TIMEZONE)
 
@@ -111,6 +131,7 @@ def setup_jobs(app: Application) -> None:
         return
 
     job_queue.run_daily(daily_reminder, time=time(7, 0), days=tuple(range(7)), name="daily_reminder")
+    job_queue.run_daily(tomorrow_reminder, time=time(18, 0), days=tuple(range(7)), name="tomorrow_reminder")
     job_queue.run_daily(weekly_approval_check, time=time(18, 0), days=(4,), name="weekly_approval_check")
     job_queue.run_repeating(retry_failed_notifications, interval=1800, first=10, name="retry_notifications")
     job_queue.run_daily(confirmation_check, time=time(20, 0), days=tuple(range(7)), name="confirmation_check")

@@ -61,6 +61,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "Bot quản lý lịch trực\n\n"
         "Các lệnh:\n"
         "/add_personnel - Thêm CBCS (hội thoại)\n"
+        "/remove_personnel ID - Xoá CBCS\n"
         "/list_personnel - Danh sách CBCS\n"
         "/exclude ID_NgàyBD_NgàyKT_LýDo - Khai báo nghỉ\n"
         "/gen MM/YYYY - Sinh lịch tháng\n"
@@ -86,11 +87,31 @@ async def list_personnel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     lines = ["Danh sách CBCS:"]
     for p in personnel:
         active = "✅" if p["is_active"] else "❌"
+        name_display = p["name"]
+        if not p["is_active"]:
+            name_display += " (đã xoá)"
         lines.append(
-            f"  ID {p['id']}: {p['name']} - {p['position'] or 'NV'} "
+            f"  ID {p['id']}: {name_display} - {p['position'] or 'NV'} "
             f"(Tổ: {p['group_name'] or 'N/A'}) {active}"
         )
     await update.message.reply_text("\n".join(lines))
+
+
+async def remove_personnel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not context.args:
+        await update.message.reply_text("Dùng: /remove_personnel ID")
+        return
+    try:
+        personnel_id = int(context.args[0])
+    except ValueError:
+        await update.message.reply_text("ID phải là số.")
+        return
+    p = personnel_service.validate_personnel_id(personnel_id)
+    if not p:
+        await update.message.reply_text(f"Không tìm thấy CBCS ID {personnel_id}.")
+        return
+    personnel_service.deactivate_personnel(personnel_id)
+    await update.message.reply_text(f"Đã xoá {p['name']} khỏi danh sách.")
 
 
 async def exclude_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -495,6 +516,7 @@ def setup_handlers() -> Application:
     app.add_handler(add_personnel_conv)
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("list_personnel", list_personnel))
+    app.add_handler(CommandHandler("remove_personnel", remove_personnel_cmd))
     app.add_handler(CommandHandler("exclude", exclude_cmd))
     app.add_handler(CommandHandler("gen", generate_cmd))
     app.add_handler(CommandHandler("week", week_cmd))

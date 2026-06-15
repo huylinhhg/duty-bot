@@ -90,8 +90,8 @@ async def confirmation_check(context: ContextTypes.DEFAULT_TYPE) -> None:
             chat_id = s.get("chat_id") or (chat_ids[0] if chat_ids else None)
             if not chat_id:
                 continue
+            today_display = datetime.today().strftime("%d/%m")
             msg = (
-                today_display = datetime.today().strftime("%d/%m")
                 f"🔔 Nhắc nhở: Bạn chưa xác nhận trực hôm nay ({today_display}).\n"
                 f"Dùng /confirm {s['id']} để xác nhận."
             )

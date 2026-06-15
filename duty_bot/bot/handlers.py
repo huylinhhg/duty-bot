@@ -64,7 +64,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "Bot quản lý lịch trực\n\n"
         "Các lệnh:\n"
         "/add_personnel - Thêm CBCS (hội thoại)\n"
-        "/remove_personnel ID - Xoá CBCS\n"
+        "/remove_personnel ID1 [ID2 ...] - Xoá CBCS\n"
         "/clear_personnel - Xoá tất cả CBCS (nhập lại)\n"
         "/list_personnel - Danh sách CBCS\n"
         "/exclude ID_NgàyBD_NgàyKT_LýDo - Khai báo nghỉ\n"
@@ -107,19 +107,30 @@ async def clear_personnel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 async def remove_personnel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not context.args:
-        await update.message.reply_text("Dùng: /remove_personnel ID")
+        await update.message.reply_text("Dùng: /remove_personnel ID1 [ID2 ID3 ...]")
         return
-    try:
-        personnel_id = int(context.args[0])
-    except ValueError:
-        await update.message.reply_text("ID phải là số.")
-        return
-    p = personnel_service.validate_personnel_id(personnel_id)
-    if not p:
-        await update.message.reply_text(f"Không tìm thấy CBCS ID {personnel_id}.")
-        return
-    personnel_service.deactivate_personnel(personnel_id)
-    await update.message.reply_text(f"Đã xoá {p['name']} khỏi danh sách.")
+    removed = []
+    not_found = []
+    for arg in context.args:
+        try:
+            pid = int(arg)
+        except ValueError:
+            not_found.append(arg)
+            continue
+        p = personnel_service.validate_personnel_id(pid)
+        if not p:
+            not_found.append(str(pid))
+            continue
+        personnel_service.deactivate_personnel(pid)
+        removed.append(p["name"])
+    msg = ""
+    if removed:
+        msg += f"Đã xoá: {', '.join(removed)}."
+    if not_found:
+        msg += f"\nKhông tìm thấy: {', '.join(not_found)}."
+    if not msg:
+        msg = "Không có ai để xoá."
+    await update.message.reply_text(msg)
 
 
 async def exclude_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

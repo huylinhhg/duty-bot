@@ -63,7 +63,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
         "Bot quản lý lịch trực\n\n"
         "Các lệnh:\n"
-        "/add_personnel - Thêm CBCS (hội thoại)\n"
+        "/them - Thêm CBCS (hội thoại)\n"
         "/xoa ID1 [ID2 ...] - Xoá CBCS\n"
         "/xoa_all - Xoá tất cả CBCS (nhập lại)\n"
         "/list_personnel - Danh sách CBCS\n"
@@ -528,7 +528,7 @@ def setup_handlers() -> Application:
     app = Application.builder().token(BOT_TOKEN).build()
 
     add_personnel_conv = ConversationHandler(
-        entry_points=[CommandHandler("add_personnel", add_personnel_start)],
+        entry_points=[CommandHandler("them", add_personnel_start)],
         states={
             ASK_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_personnel_name)],
             ASK_POSITION: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_personnel_position)],

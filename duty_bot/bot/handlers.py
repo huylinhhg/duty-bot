@@ -49,7 +49,10 @@ def _display_date(db_date: str) -> str:
         return ""
     d = datetime.strptime(db_date, "%Y-%m-%d")
     wd = WEEKDAYS[d.weekday()]
-    return f"{d.strftime('%d/%m/%Y')} ({wd})"
+    month = d.month
+    if month == 1 or month == 12:
+        return f"{d.strftime('%d/%m/%Y')} ({wd})"
+    return f"{d.strftime('%d/%m')} ({wd})"
 
 
 def _shift_label(s: str) -> str:

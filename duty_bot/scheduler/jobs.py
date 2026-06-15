@@ -21,7 +21,8 @@ async def daily_reminder(context: ContextTypes.DEFAULT_TYPE) -> None:
     if not chat_ids:
         return
 
-    msg_parts = [f"Lịch trực hôm nay ({today_str}):"]
+    today_display = datetime.today().strftime("%d/%m")
+    msg_parts = [f"Lịch trực hôm nay ({today_display}):"]
     for s in schedules:
         msg_parts.append(f"- {s.get('personnel_name', '?')}")
     msg = "\n".join(msg_parts)
@@ -90,7 +91,8 @@ async def confirmation_check(context: ContextTypes.DEFAULT_TYPE) -> None:
             if not chat_id:
                 continue
             msg = (
-                f"🔔 Nhắc nhở: Bạn chưa xác nhận trực hôm nay ({today_str}).\n"
+                today_display = datetime.today().strftime("%d/%m")
+                f"🔔 Nhắc nhở: Bạn chưa xác nhận trực hôm nay ({today_display}).\n"
                 f"Dùng /confirm {s['id']} để xác nhận."
             )
             try:
@@ -110,7 +112,8 @@ async def tomorrow_reminder(context: ContextTypes.DEFAULT_TYPE) -> None:
     if not chat_ids:
         return
 
-    msg_parts = [f"Nhắc lịch trực ngày mai ({tomorrow}):"]
+    tomorrow_display = (datetime.today() + timedelta(days=1)).strftime("%d/%m")
+    msg_parts = [f"Nhắc lịch trực ngày mai ({tomorrow_display}):"]
     for s in schedules:
         msg_parts.append(f"- {s.get('personnel_name', '?')}")
     msg = "\n".join(msg_parts)

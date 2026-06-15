@@ -23,13 +23,17 @@ def weekly_report(year: int, week: int) -> str:
 
     weekdays = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"]
     lines = [f"BÁO CÁO LỊCH TRỰC TUẦN {week}/{year}"]
-    lines.append(f"({week_start.strftime('%d/%m/%Y')} - {week_end.strftime('%d/%m/%Y')})")
+    lines.append(f"({week_start.strftime('%d/%m')} - {week_end.strftime('%d/%m')})")
     lines.append("")
 
     current_date = None
     for s in schedules:
         d = datetime.strptime(s["date"], "%Y-%m-%d")
-        date_label = f"{d.strftime('%d/%m/%Y')} ({weekdays[d.weekday()]})"
+        month = d.month
+        if month == 1 or month == 12:
+            date_label = f"{d.strftime('%d/%m/%Y')} ({weekdays[d.weekday()]})"
+        else:
+            date_label = f"{d.strftime('%d/%m')} ({weekdays[d.weekday()]})"
         if date_label != current_date:
             current_date = date_label
             lines.append(f"  {date_label}:")
@@ -63,7 +67,11 @@ def monthly_report(year: int, month: int) -> str:
     current_date = None
     for s in schedules:
         d = datetime.strptime(s["date"], "%Y-%m-%d")
-        date_label = d.strftime("%d/%m/%Y")
+        month = d.month
+        if month == 1 or month == 12:
+            date_label = d.strftime("%d/%m/%Y")
+        else:
+            date_label = d.strftime("%d/%m")
         if date_label != current_date:
             current_date = date_label
         shift_label = SHIFT_LABELS.get(s["shift"], s["shift"])

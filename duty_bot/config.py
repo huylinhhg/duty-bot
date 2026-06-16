@@ -18,5 +18,6 @@ VIETNAM_HOLIDAYS = [
     (1, 1),   # Tết Dương lịch
     (4, 30),  # Ngày Giải phóng
     (5, 1),   # Quốc tế Lao động
+    (8, 19),  # Ngày truyền thống Công an Nhân dân
     (9, 2),   # Quốc khánh
 ]

@@ -12,22 +12,28 @@ ASK_NAME = 0
 
 async def add_personnel_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     context.user_data["conv"] = {}
-    await update.message.reply_text("Nhập tên CBCS:")
+    await update.message.reply_text("Nhập tên CBCS (mỗi dòng một tên):")
     return ASK_NAME
 
 
 async def add_personnel_name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    name = update.message.text.strip()
-    if not name:
-        await update.message.reply_text("Tên không được để trống. Nhập lại:")
+    text = update.message.text.strip()
+    if not text:
+        await update.message.reply_text("Không được để trống. Nhập lại:")
         return ASK_NAME
 
-    try:
-        p = personnel_service.add_personnel(name, "")
-        await update.message.reply_text(f"Đã thêm: {p.name}")
-    except Exception as e:
-        logger.error("Failed to add personnel: %s", e)
-        await update.message.reply_text(f"Lỗi: {e}")
+    names = [line.strip() for line in text.split("\n") if line.strip()]
+    added = []
+    for name in names:
+        try:
+            p = personnel_service.add_personnel(name, "")
+            added.append(p.name)
+        except Exception as e:
+            logger.error("Failed to add personnel %s: %s", name, e)
+            added.append(f"{name} (lỗi: {e})")
+
+    if added:
+        await update.message.reply_text(f"Đã thêm:\n" + "\n".join(f"  - {n}" for n in added))
     context.user_data.pop("conv", None)
     return ConversationHandler.END
 

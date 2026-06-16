@@ -4,20 +4,24 @@ from datetime import datetime, time, timedelta
 import pytz
 from telegram.ext import Application, ContextTypes
 
-from duty_bot.config import CHAT_IDS, TIMEZONE, VIETNAM_HOLIDAYS
+from duty_bot.config import CHAT_IDS, TIMEZONE, get_holiday_dates
 from duty_bot.services import scheduler_service, report_service, notification_service
 import duty_bot.database.repository as repo
 
 logger = logging.getLogger(__name__)
 
 
+_holiday_cache: dict[int, set[str]] = {}
+
+
 def _is_non_duty_day(date_obj: datetime) -> bool:
     """Check if date is weekend (Fri-Sun) or holiday."""
     if date_obj.weekday() >= 4:  # T6=4, T7=5, CN=6
         return True
-    if (date_obj.month, date_obj.day) in VIETNAM_HOLIDAYS:
-        return True
-    return False
+    year = date_obj.year
+    if year not in _holiday_cache:
+        _holiday_cache[year] = get_holiday_dates(year)
+    return date_obj.strftime("%Y-%m-%d") in _holiday_cache[year]
 
 
 async def daily_reminder(context: ContextTypes.DEFAULT_TYPE) -> None:

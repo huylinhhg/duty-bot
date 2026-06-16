@@ -9,7 +9,7 @@ from duty_bot.models.entities import DutySchedule
 
 logger = logging.getLogger(__name__)
 
-from duty_bot.config import VIETNAM_HOLIDAYS
+from duty_bot.config import get_holiday_dates
 
 WEEKLY_SHIFTS = {
     0: ["sang"],  # T2
@@ -22,8 +22,14 @@ WEEKLY_SHIFTS = {
 SHIFT_LABELS = {"sang": "Sáng"}
 
 
+_holiday_cache: dict[int, set[str]] = {}
+
+
 def _is_holiday(date_obj: datetime) -> bool:
-    return (date_obj.month, date_obj.day) in VIETNAM_HOLIDAYS
+    year = date_obj.year
+    if year not in _holiday_cache:
+        _holiday_cache[year] = get_holiday_dates(year)
+    return date_obj.strftime("%Y-%m-%d") in _holiday_cache[year]
 
 
 def _get_next_weekday_date(year: int, month: int, day: int) -> datetime:

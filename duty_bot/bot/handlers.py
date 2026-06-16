@@ -56,7 +56,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "/xoa ID1 [ID2 ...] - Xoá CBCS\n"
         "/xoa_all - Xoá tất cả CBCS (nhập lại)\n"
         "/list_personnel - Danh sách CBCS\n"
-        "/gen MM/YYYY - Sinh lịch trực tháng\n"
+        "/gen - Tạo mới hoặc xem lịch trực tháng hiện tại\n"
         "/week - Xem lịch tuần này\n"
         "/today - Lịch hôm nay\n"
         "/submit_approval - Gửi duyệt tuần tiếp\n"
@@ -143,26 +143,32 @@ async def generate_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     year = now.year
     month = now.month
     if context.args:
-        match = re.match(r"(\d{1,2})/(\d{4})", context.args[0])
-        if not match:
-            await update.message.reply_text("Sai. Dùng: /gen MM/YYYY")
+        try:
+            month = int(context.args[0])
+        except ValueError:
+            await update.message.reply_text("Sai. Dùng: /gen MM (1-12) hoặc /gen")
             return
-        month = int(match.group(1))
-        year = int(match.group(2))
         if month < 1 or month > 12:
             await update.message.reply_text("Tháng phải từ 1-12.")
             return
 
-    repo.delete_all_schedules()
+    num_days = calendar.monthrange(year, month)[1]
+    start = f"{year:04d}-{month:02d}-01"
+    end = f"{year:04d}-{month:02d}-{num_days:02d}"
+    existing = scheduler_service.get_schedules_by_date_range(start, end)
+
+    if existing:
+        table = _format_schedule_table(existing)
+        stats = _month_stats(year, month)
+        await update.message.reply_text(f"Bạn đang có lịch trực tháng {month}/{year}:\n\n{table}\n{stats}")
+        return
+
     msg = await update.message.reply_text("Đang tạo lịch trực...")
     result = scheduler_service.generate_monthly_schedule(year, month)
     if "error" in result:
         await msg.edit_text(f"Lỗi: {result['error']}")
         return
 
-    num_days = calendar.monthrange(year, month)[1]
-    start = f"{year:04d}-{month:02d}-01"
-    end = f"{year:04d}-{month:02d}-{num_days:02d}"
     schedules = scheduler_service.get_schedules_by_date_range(start, end)
     table = _format_schedule_table(schedules)
     stats = _month_stats(year, month)

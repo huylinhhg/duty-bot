@@ -16,7 +16,7 @@ _holiday_cache: dict[int, set[str]] = {}
 
 def _is_non_duty_day(date_obj: datetime) -> bool:
     """Check if date is weekend (Fri-Sun) or holiday."""
-    if date_obj.weekday() >= 4:  # T6=4, T7=5, CN=6
+    if date_obj.weekday() >= 5:  # T7=5, CN=6
         return True
     year = date_obj.year
     if year not in _holiday_cache:
@@ -74,7 +74,7 @@ async def daily_reminder(context: ContextTypes.DEFAULT_TYPE) -> None:
 async def weekly_start_reminder(context: ContextTypes.DEFAULT_TYPE) -> None:
     today = datetime.today()
     weekday = today.weekday()
-    if weekday >= 4:  # T6-CN: không gửi
+    if weekday >= 5:  # T7-CN: không gửi
         return
 
     # Chỉ gửi nếu hôm qua là ngày không trực (tức hôm nay là đầu tuần)

@@ -16,7 +16,8 @@ WEEKLY_SHIFTS = {
     1: ["sang"],  # T3
     2: ["sang"],  # T4
     3: ["sang"],  # T5
-    # T6, T7, CN: không trực
+    4: ["sang"],  # T6
+    # T7, CN: không trực
 }
 
 SHIFT_LABELS = {"sang": "Sáng"}

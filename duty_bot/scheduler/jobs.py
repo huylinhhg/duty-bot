@@ -24,36 +24,43 @@ def _is_non_duty_day(date_obj: datetime) -> bool:
     return date_obj.strftime("%Y-%m-%d") in _holiday_cache[year]
 
 
+def _find_next_duty(from_date: datetime) -> datetime:
+    d = from_date
+    while _is_non_duty_day(d):
+        d += timedelta(days=1)
+    return d
+
+
 async def daily_reminder(context: ContextTypes.DEFAULT_TYPE) -> None:
     chat_ids = [c.strip() for c in CHAT_IDS.split(",") if c.strip()]
     if not chat_ids:
         return
 
-    tomorrow = datetime.today() + timedelta(days=1)
-    tomorrow_str = tomorrow.strftime("%Y-%m-%d")
-    tomorrow_display = tomorrow.strftime("%d/%m")
+    today = datetime.today()
+    tomorrow = today + timedelta(days=1)
+
+    today_str = today.strftime("%Y-%m-%d")
+    today_display = today.strftime("%d/%m")
+
+    def name_for_date(date_str: str) -> str:
+        rows = scheduler_service.get_schedules_by_date(date_str)
+        return rows[0].get("personnel_name", "?") if rows else "?"
+
+    today_name = name_for_date(today_str)
+    msg_parts = [
+        f"Lịch trực hôm nay ({today_display}): {today_name}",
+    ]
 
     if _is_non_duty_day(tomorrow):
-        # Tìm ngày trực tiếp theo (bỏ qua cuối tuần và lễ)
-        next_duty = tomorrow
-        while _is_non_duty_day(next_duty):
-            next_duty += timedelta(days=1)
+        next_duty = _find_next_duty(tomorrow)
         next_display = next_duty.strftime("%d/%m")
-        msg = f"Ngày mai ({tomorrow_display}) không có lịch trực.\nNgày trực tiếp theo: {next_display}."
-        for cid in chat_ids:
-            try:
-                await context.bot.send_message(chat_id=int(cid), text=msg)
-            except Exception as e:
-                logger.error("Failed to send reminder: %s", e)
-        return
-
-    schedules = scheduler_service.get_schedules_by_date(tomorrow_str)
-    if not schedules:
-        return
-
-    msg_parts = [f"Lịch trực ngày mai ({tomorrow_display}):"]
-    for s in schedules:
-        msg_parts.append(f"- {s.get('personnel_name', '?')}")
+        next_name = name_for_date(next_duty.strftime("%Y-%m-%d"))
+        msg_parts.append(f"Ngày trực tiếp theo ({next_display}): {next_name}")
+    else:
+        tomorrow_str = tomorrow.strftime("%Y-%m-%d")
+        tomorrow_display = tomorrow.strftime("%d/%m")
+        tomorrow_name = name_for_date(tomorrow_str)
+        msg_parts.append(f"Ngày mai ({tomorrow_display}): {tomorrow_name}")
 
     msg = "\n".join(msg_parts)
     for cid in chat_ids:
@@ -115,7 +122,7 @@ def setup_jobs(app: Application) -> None:
         logger.warning("No job queue available")
         return
 
-    job_queue.run_daily(daily_reminder, time=time(16, 0), days=tuple(range(7)), name="daily_reminder")
+    job_queue.run_daily(daily_reminder, time=time(15, 0), days=tuple(range(7)), name="daily_reminder")
     job_queue.run_daily(weekly_approval_check, time=time(18, 0), days=(4,), name="weekly_approval_check")
     job_queue.run_repeating(retry_failed_notifications, interval=1800, first=10, name="retry_notifications")
 

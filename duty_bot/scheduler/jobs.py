@@ -71,6 +71,47 @@ async def daily_reminder(context: ContextTypes.DEFAULT_TYPE) -> None:
             logger.error("Failed to send reminder to %s: %s", cid, e)
 
 
+async def weekly_start_reminder(context: ContextTypes.DEFAULT_TYPE) -> None:
+    today = datetime.today()
+    weekday = today.weekday()
+    if weekday >= 4:  # T6-CN: không gửi
+        return
+
+    # Chỉ gửi nếu hôm qua là ngày không trực (tức hôm nay là đầu tuần)
+    prev = today - timedelta(days=1)
+    if not _is_non_duty_day(prev):
+        # Hôm qua vẫn là ngày trực → không phải đầu tuần
+        return
+
+    if _is_non_duty_day(today):
+        return
+
+    chat_ids = [c.strip() for c in CHAT_IDS.split(",") if c.strip()]
+    if not chat_ids:
+        return
+
+    iso = today.isocalendar()
+    week_number = iso[1]
+    schedules = scheduler_service.get_week_schedules(iso[0], week_number)
+    if not schedules:
+        return
+
+    msg_parts = [f"LỊCH TRỰC TUẦN {week_number}/{iso[0]}"]
+    for s in schedules:
+        d = datetime.strptime(s["date"], "%Y-%m-%d")
+        date_label = d.strftime("%d/%m")
+        name = s.get("personnel_name", "?")
+        msg_parts.append(f"  {date_label}: {name}")
+
+    msg = "\n".join(msg_parts)
+    for cid in chat_ids:
+        try:
+            await context.bot.send_message(chat_id=int(cid), text=msg)
+            logger.info("Weekly start reminder sent to %s", cid)
+        except Exception as e:
+            logger.error("Failed to send weekly start reminder to %s: %s", cid, e)
+
+
 async def weekly_approval_check(context: ContextTypes.DEFAULT_TYPE) -> None:
     today = datetime.today()
     next_monday = today + timedelta(days=(7 - today.weekday()))
@@ -123,6 +164,7 @@ def setup_jobs(app: Application) -> None:
         return
 
     job_queue.run_daily(daily_reminder, time=time(15, 0), days=tuple(range(7)), name="daily_reminder")
+    job_queue.run_daily(weekly_start_reminder, time=time(9, 0), days=tuple(range(7)), name="weekly_start_reminder")
     job_queue.run_daily(weekly_approval_check, time=time(18, 0), days=(4,), name="weekly_approval_check")
     job_queue.run_repeating(retry_failed_notifications, interval=1800, first=10, name="retry_notifications")
 

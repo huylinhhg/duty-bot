@@ -2,6 +2,7 @@ import calendar
 import logging
 import re
 from datetime import datetime, timedelta
+from typing import Any
 
 from telegram import Update
 from telegram.ext import (
@@ -109,6 +110,34 @@ async def xoa_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(msg)
 
 
+def _format_schedule_table(schedules: list[dict[str, Any]]) -> str:
+    if not schedules:
+        return "Không có lịch trực."
+    lines = ["```", f"{'STT':<4} | {'Ngày':<14} | {'Tên':<20}", "-" * 42]
+    for i, s in enumerate(schedules, 1):
+        d = datetime.strptime(s["date"], "%Y-%m-%d")
+        date_label = _display_date(s["date"])
+        name = s.get("personnel_name", "?")
+        lines.append(f"{i:<4} | {date_label:<14} | {name:<20}")
+    lines.append("```")
+    return "\n".join(lines)
+
+
+def _month_stats(year: int, month: int) -> str:
+    num_days = calendar.monthrange(year, month)[1]
+    start = f"{year:04d}-{month:02d}-01"
+    end = f"{year:04d}-{month:02d}-{num_days:02d}"
+    stats = repo.get_personnel_shift_count(start, end)
+    if not stats:
+        return ""
+    lines = ["", "Thống kê:"]
+    for s in stats:
+        lines.append(f"  - {s['name']}: {s['shift_count']} ca")
+    total = sum(s["shift_count"] for s in stats)
+    lines.append(f"  Tổng: {total} ca")
+    return "\n".join(lines)
+
+
 async def generate_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     now = datetime.today()
     year = now.year
@@ -130,7 +159,14 @@ async def generate_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     if "error" in result:
         await msg.edit_text(f"Lỗi: {result['error']}")
         return
-    await msg.edit_text(f"Đã tạo lịch trực tháng {month}/{year}.")
+
+    num_days = calendar.monthrange(year, month)[1]
+    start = f"{year:04d}-{month:02d}-01"
+    end = f"{year:04d}-{month:02d}-{num_days:02d}"
+    schedules = scheduler_service.get_schedules_by_date_range(start, end)
+    table = _format_schedule_table(schedules)
+    stats = _month_stats(year, month)
+    await msg.edit_text(f"Đã tạo lịch trực tháng {month}/{year}.\n\n{table}\n{stats}")
 
 
 async def week_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

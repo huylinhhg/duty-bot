@@ -21,10 +21,8 @@ import duty_bot.database.repository as repo
 from duty_bot.bot.conversations import (
     add_personnel_start,
     add_personnel_name,
-    add_personnel_position,
     cancel as conv_cancel,
     ASK_NAME,
-    ASK_POSITION,
 )
 from duty_bot.bot.keyboards import (
     approval_keyboard,
@@ -60,7 +58,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "/xoa_lich - Xoá tất cả lịch trực\n"
         "/week - Xem lịch tuần này\n"
         "/today - Lịch hôm nay\n"
-        "/submit_approval - Gửi duyệt tuần tiếp\n"
+
         "/approve ID - Duyệt lịch\n"
         "/report week|month - Báo cáo\n"
         "/stats - Thống kê\n"
@@ -232,26 +230,6 @@ async def today_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text("\n".join(lines))
 
 
-async def submit_approval_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    today = datetime.today()
-    next_monday = today + timedelta(days=(7 - today.weekday()))
-    next_sunday = next_monday + timedelta(days=6)
-    week_start = next_monday.strftime("%Y-%m-%d")
-    week_end = next_sunday.strftime("%Y-%m-%d")
-
-    approval = approval_service.submit_for_approval(week_start, week_end)
-    if not approval:
-        await update.message.reply_text(f"Tuần {week_start} - {week_end} đã được gửi duyệt trước đó.")
-        return
-
-    await update.message.reply_text(
-        f"Đã gửi duyệt lịch tuần:\n"
-        f"  {_display_date(week_start)} - {_display_date(week_end)}\n"
-        f"Mã duyệt: #{approval.id}",
-        reply_markup=approval_keyboard(approval.id),
-    )
-
-
 async def approve_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not context.args:
         await update.message.reply_text("Dùng: /approve ID")
@@ -378,7 +356,6 @@ def setup_handlers() -> Application:
         entry_points=[CommandHandler("them", add_personnel_start)],
         states={
             ASK_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_personnel_name)],
-            ASK_POSITION: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_personnel_position)],
         },
         fallbacks=[CommandHandler("cancel", conv_cancel)],
     )
@@ -392,7 +369,6 @@ def setup_handlers() -> Application:
     app.add_handler(CommandHandler("gen", generate_cmd))
     app.add_handler(CommandHandler("week", week_cmd))
     app.add_handler(CommandHandler("today", today_cmd))
-    app.add_handler(CommandHandler("submit_approval", submit_approval_cmd))
     app.add_handler(CommandHandler("approve", approve_cmd))
     app.add_handler(CommandHandler("report", report_cmd))
     app.add_handler(CommandHandler("stats", stats_cmd))

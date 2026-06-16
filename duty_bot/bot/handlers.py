@@ -62,7 +62,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "/today - Lịch hôm nay\n"
 
         "/approve ID - Duyệt lịch\n"
-        "/report week|month - Báo cáo\n"
+        "/bctuan - Báo cáo tuần này\n"
+        "/bcthang - Báo cáo tháng này\n"
         "/stats - Thống kê\n"
     )
 
@@ -259,23 +260,16 @@ async def approve_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     )
 
 
-async def report_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if not context.args:
-        await update.message.reply_text("Dùng: /report week hoặc /report month")
-        return
-
+async def bctuan_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     today = datetime.today()
-    report_type = context.args[0].lower()
+    iso = today.isocalendar()
+    text = report_service.weekly_report(iso[0], iso[1])
+    await update.message.reply_text(text)
 
-    if report_type == "week":
-        iso = today.isocalendar()
-        text = report_service.weekly_report(iso[0], iso[1])
-    elif report_type == "month":
-        text = report_service.monthly_report(today.year, today.month)
-    else:
-        await update.message.reply_text("Chọn: week hoặc month")
-        return
 
+async def bcthang_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    today = datetime.today()
+    text = report_service.monthly_report(today.year, today.month)
     await update.message.reply_text(text)
 
 
@@ -373,7 +367,8 @@ def setup_handlers() -> Application:
     app.add_handler(CommandHandler("week", week_cmd))
     app.add_handler(CommandHandler("today", today_cmd))
     app.add_handler(CommandHandler("approve", approve_cmd))
-    app.add_handler(CommandHandler("report", report_cmd))
+    app.add_handler(CommandHandler("bctuan", bctuan_cmd))
+    app.add_handler(CommandHandler("bcthang", bcthang_cmd))
     app.add_handler(CommandHandler("stats", stats_cmd))
     app.add_handler(CallbackQueryHandler(handle_callback, pattern="^(appr_|del_)"))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))

@@ -57,6 +57,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "/xoa_all - Xoá tất cả CBCS (nhập lại)\n"
         "/list_personnel - Danh sách CBCS\n"
         "/gen - Tạo mới hoặc xem lịch trực tháng hiện tại\n"
+        "/xoa_lich - Xoá tất cả lịch trực\n"
         "/week - Xem lịch tuần này\n"
         "/today - Lịch hôm nay\n"
         "/submit_approval - Gửi duyệt tuần tiếp\n"
@@ -80,6 +81,24 @@ async def list_personnel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
 async def clear_personnel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text("Bạn có chắc muốn xoá TẤT CẢ CBCS?", reply_markup=delete_confirm_keyboard("all_personnel", 0))
+
+
+async def clear_schedules_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    now = datetime.today()
+    start = f"{now.year:04d}-{now.month:02d}-01"
+    num_days = calendar.monthrange(now.year, now.month)[1]
+    end = f"{now.year:04d}-{now.month:02d}-{num_days:02d}"
+    schedules = scheduler_service.get_schedules_by_date_range(start, end)
+
+    if not schedules:
+        await update.message.reply_text("Hiện không có lịch trực nào.")
+        return
+
+    table = _format_schedule_table(schedules)
+    await update.message.reply_text(
+        f"{table}\n\nBạn có chắc muốn xoá TẤT CẢ lịch trực?",
+        reply_markup=delete_confirm_keyboard("all_schedules", 0),
+    )
 
 
 async def xoa_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -331,6 +350,11 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         await query.edit_message_text(f"Đã xoá {count} CBCS. Thêm lại bằng /them.")
     elif data.startswith("del_no_all_personnel_"):
         await query.edit_message_text("Đã huỷ.")
+    elif data.startswith("del_yes_all_schedules_"):
+        count = repo.delete_all_schedules()
+        await query.edit_message_text(f"Đã xoá {count} lịch trực.")
+    elif data.startswith("del_no_all_schedules_"):
+        await query.edit_message_text("Đã huỷ.")
     else:
         await query.edit_message_text("Đã nhận yêu cầu.")
 
@@ -364,6 +388,7 @@ def setup_handlers() -> Application:
     app.add_handler(CommandHandler("list_personnel", list_personnel))
     app.add_handler(CommandHandler("xoa", xoa_cmd))
     app.add_handler(CommandHandler("xoa_all", clear_personnel_cmd))
+    app.add_handler(CommandHandler("xoa_lich", clear_schedules_cmd))
     app.add_handler(CommandHandler("gen", generate_cmd))
     app.add_handler(CommandHandler("week", week_cmd))
     app.add_handler(CommandHandler("today", today_cmd))

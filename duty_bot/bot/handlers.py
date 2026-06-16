@@ -27,10 +27,9 @@ from duty_bot.bot.conversations import (
     ASK_CONTINUE,
 )
 from duty_bot.bot.keyboards import (
-    approval_keyboard,
     delete_confirm_keyboard,
 )
-from duty_bot.services import personnel_service, scheduler_service, approval_service, report_service
+from duty_bot.services import personnel_service, scheduler_service, report_service
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +60,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "/week - Xem lịch tuần này\n"
         "/today - Lịch hôm nay\n"
 
-        "/approve ID - Duyệt lịch\n"
+
         "/bctuan - Báo cáo tuần này\n"
         "/bcthang - Báo cáo tháng này\n"
         "/stats - Thống kê\n"
@@ -233,33 +232,6 @@ async def today_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text("\n".join(lines))
 
 
-async def approve_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if not context.args:
-        await update.message.reply_text("Dùng: /approve ID")
-        return
-
-    try:
-        approval_id = int(context.args[0])
-    except ValueError:
-        await update.message.reply_text("ID phải là số.")
-        return
-
-    approval = approval_service.get_approval(approval_id)
-    if not approval:
-        await update.message.reply_text(f"Không tìm thấy phiếu duyệt #{approval_id}.")
-        return
-
-    success = approval_service.approve(approval_id, 0)
-    if not success:
-        await update.message.reply_text(f"Không thể duyệt phiếu #{approval_id}.")
-        return
-
-    await update.message.reply_text(
-        f"Đã duyệt lịch #{approval_id}:\n"
-        f"  {approval['week_start']} - {approval['week_end']}"
-    )
-
-
 async def bctuan_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     today = datetime.today()
     iso = today.isocalendar()
@@ -305,21 +277,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     await query.answer()
     data = query.data
 
-    if data.startswith("appr_approve_"):
-        approval_id = int(data.split("_")[2])
-        approval = approval_service.get_approval(approval_id)
-        if not approval:
-            await query.edit_message_text("Không tìm thấy phiếu duyệt.")
-            return
-        success = approval_service.approve(approval_id, 0)
-        if success:
-            await query.edit_message_text(
-                f"Đã duyệt lịch #{approval_id}:\n"
-                f"  {approval['week_start']} - {approval['week_end']}"
-            )
-        else:
-            await query.edit_message_text(f"Không thể duyệt #{approval_id}.")
-    elif data.startswith("del_yes_all_personnel_"):
+    if data.startswith("del_yes_all_personnel_"):
         count = repo.delete_all_personnel()
         await query.edit_message_text(f"Đã xoá {count} CBCS. Thêm lại bằng /them.")
     elif data.startswith("del_no_all_personnel_"):
@@ -366,7 +324,6 @@ def setup_handlers() -> Application:
     app.add_handler(CommandHandler("gen", generate_cmd))
     app.add_handler(CommandHandler("week", week_cmd))
     app.add_handler(CommandHandler("today", today_cmd))
-    app.add_handler(CommandHandler("approve", approve_cmd))
     app.add_handler(CommandHandler("bctuan", bctuan_cmd))
     app.add_handler(CommandHandler("bcthang", bcthang_cmd))
     app.add_handler(CommandHandler("stats", stats_cmd))

@@ -9,17 +9,21 @@ from duty_bot.models.entities import DutySchedule
 
 logger = logging.getLogger(__name__)
 
+from duty_bot.config import VIETNAM_HOLIDAYS
+
 WEEKLY_SHIFTS = {
-    0: ["sang"],
-    1: ["sang"],
-    2: ["sang"],
-    3: ["sang"],
-    4: ["sang"],
-    5: ["sang"],
-    6: ["sang"],
+    0: ["sang"],  # T2
+    1: ["sang"],  # T3
+    2: ["sang"],  # T4
+    3: ["sang"],  # T5
+    # T6, T7, CN: không trực
 }
 
 SHIFT_LABELS = {"sang": "Sáng"}
+
+
+def _is_holiday(date_obj: datetime) -> bool:
+    return (date_obj.month, date_obj.day) in VIETNAM_HOLIDAYS
 
 
 def _get_next_weekday_date(year: int, month: int, day: int) -> datetime:
@@ -69,8 +73,13 @@ def generate_monthly_schedule(
         date_str = date_obj.strftime("%Y-%m-%d")
         weekday = date_obj.weekday()
 
+        if _is_holiday(date_obj):
+            continue
+
         today_excluded = date_exclusions.get(date_str, set())
-        today_shifts = WEEKLY_SHIFTS[weekday]
+        today_shifts = WEEKLY_SHIFTS.get(weekday, [])
+        if not today_shifts:
+            continue
         today_assignments: set[int] = set()
 
         for shift in today_shifts:
@@ -170,8 +179,16 @@ def generate_weekly_schedule(year: int, week: int) -> dict[str, Any]:
     while current <= week_end:
         date_str = current.strftime("%Y-%m-%d")
         weekday = current.weekday()
+
+        if _is_holiday(current):
+            current += timedelta(days=1)
+            continue
+
         today_excluded = date_exclusions.get(date_str, set())
-        today_shifts = WEEKLY_SHIFTS[weekday]
+        today_shifts = WEEKLY_SHIFTS.get(weekday, [])
+        if not today_shifts:
+            current += timedelta(days=1)
+            continue
         today_assignments: set[int] = set()
 
         for shift in today_shifts:

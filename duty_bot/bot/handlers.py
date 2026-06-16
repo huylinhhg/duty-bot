@@ -21,8 +21,10 @@ import duty_bot.database.repository as repo
 from duty_bot.bot.conversations import (
     add_personnel_start,
     add_personnel_name,
+    handle_continue,
     cancel as conv_cancel,
     ASK_NAME,
+    ASK_CONTINUE,
 )
 from duty_bot.bot.keyboards import (
     approval_keyboard,
@@ -356,6 +358,7 @@ def setup_handlers() -> Application:
         entry_points=[CommandHandler("them", add_personnel_start)],
         states={
             ASK_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, add_personnel_name)],
+            ASK_CONTINUE: [CallbackQueryHandler(handle_continue, pattern="^add_more_")],
         },
         fallbacks=[CommandHandler("cancel", conv_cancel)],
     )

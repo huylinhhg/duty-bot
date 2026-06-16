@@ -18,3 +18,13 @@ def delete_confirm_keyboard(item_type: str, item_id: int) -> InlineKeyboardMarku
         ],
     ]
     return InlineKeyboardMarkup(keyboard)
+
+
+def yes_no_keyboard(callback_prefix: str) -> InlineKeyboardMarkup:
+    keyboard = [
+        [
+            InlineKeyboardButton("Có", callback_data=f"{callback_prefix}_yes"),
+            InlineKeyboardButton("Không", callback_data=f"{callback_prefix}_no"),
+        ],
+    ]
+    return InlineKeyboardMarkup(keyboard)

@@ -55,7 +55,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "/them - Thêm CBCS (hội thoại)\n"
         "/xoa ID1 [ID2 ...] - Xoá CBCS\n"
         "/xoa_all - Xoá tất cả CBCS (nhập lại)\n"
-        "/list_personnel - Danh sách CBCS\n"
+        "/ds - Danh sách CBCS\n"
         "/gen - Tạo mới hoặc xem lịch trực tháng hiện tại\n"
         "/xoa_lich - Xoá tất cả lịch trực\n"
         "/week - Xem lịch tuần này\n"
@@ -385,7 +385,7 @@ def setup_handlers() -> Application:
 
     app.add_handler(add_personnel_conv)
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("list_personnel", list_personnel))
+    app.add_handler(CommandHandler("ds", list_personnel))
     app.add_handler(CommandHandler("xoa", xoa_cmd))
     app.add_handler(CommandHandler("xoa_all", clear_personnel_cmd))
     app.add_handler(CommandHandler("xoa_lich", clear_schedules_cmd))

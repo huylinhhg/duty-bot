@@ -7,10 +7,6 @@ from duty_bot.models.entities import Personnel
 
 logger = logging.getLogger(__name__)
 
-SHIFT_LABELS = {"sang": "Sáng", "chieu": "Chiều", "toi": "Tối", "ca1": "Ca 1", "ca2": "Ca 2", "ca3": "Ca 3"}
-SHIFT_ORDER = {"sang": 0, "chieu": 1, "toi": 2, "ca1": 0, "ca2": 1, "ca3": 2}
-
-
 def add_personnel(name: str, position: str = "", group_name: str = "") -> Personnel:
     pid = repo.add_personnel(name, position, group_name)
     repo.add_audit_log("create_personnel", "personnel", pid, json.dumps({"name": name, "position": position, "group_name": group_name}, ensure_ascii=False))

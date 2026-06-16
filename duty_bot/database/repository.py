@@ -25,7 +25,7 @@ def get_personnel(personnel_id: Optional[int] = None) -> list[dict[str, Any]]:
             ).fetchall()
         else:
             rows = conn.execute(
-                "SELECT * FROM personnel ORDER BY group_name, position, name"
+                "SELECT * FROM personnel ORDER BY id"
             ).fetchall()
         return [dict(r) for r in rows]
 
@@ -33,7 +33,7 @@ def get_personnel(personnel_id: Optional[int] = None) -> list[dict[str, Any]]:
 def get_active_personnel() -> list[dict[str, Any]]:
     with get_db() as conn:
         rows = conn.execute(
-            "SELECT * FROM personnel WHERE is_active = 1 ORDER BY group_name, position, name"
+            "SELECT * FROM personnel WHERE is_active = 1 ORDER BY id"
         ).fetchall()
         return [dict(r) for r in rows]
 
@@ -213,6 +213,12 @@ def delete_schedule(schedule_id: int) -> bool:
     with get_db() as conn:
         cur = conn.execute("DELETE FROM duty_schedules WHERE id = ?", (schedule_id,))
         return cur.rowcount > 0
+
+
+def delete_all_schedules() -> int:
+    with get_db() as conn:
+        cur = conn.execute("DELETE FROM duty_schedules")
+        return cur.rowcount
 
 
 def count_schedules_in_range(start_date: str, end_date: str) -> int:

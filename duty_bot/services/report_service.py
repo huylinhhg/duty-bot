@@ -6,9 +6,6 @@ import duty_bot.database.repository as repo
 
 logger = logging.getLogger(__name__)
 
-SHIFT_LABELS = {"sang": "Sáng"}
-
-
 def weekly_report(year: int, week: int) -> str:
     from datetime import date as date_type
     week_start = date_type.fromisocalendar(year, week, 1)
@@ -37,7 +34,6 @@ def weekly_report(year: int, week: int) -> str:
         if date_label != current_date:
             current_date = date_label
             lines.append(f"  {date_label}:")
-        shift_label = SHIFT_LABELS.get(s["shift"], s["shift"])
         status_icon = ""
         if s["status"] == "approved":
             status_icon = " ✅"
@@ -45,7 +41,7 @@ def weekly_report(year: int, week: int) -> str:
             status_icon = " ⏳"
         elif s["status"] == "draft":
             status_icon = " 📝"
-        lines.append(f"    - {s.get('personnel_name', '?')} (ca {shift_label}){status_icon}")
+        lines.append(f"    - {s.get('personnel_name', '?')}{status_icon}")
 
     lines.append("")
     lines.append(f"Tổng: {len(schedules)} ca trực")
@@ -74,8 +70,7 @@ def monthly_report(year: int, month: int) -> str:
             date_label = d.strftime("%d/%m")
         if date_label != current_date:
             current_date = date_label
-        shift_label = SHIFT_LABELS.get(s["shift"], s["shift"])
-        lines.append(f"  {date_label}: {s.get('personnel_name', '?')} (ca {shift_label})")
+        lines.append(f"  {date_label}: {s.get('personnel_name', '?')}")
 
     lines.append("")
     lines.append(f"Tổng: {len(schedules)} ca trực")

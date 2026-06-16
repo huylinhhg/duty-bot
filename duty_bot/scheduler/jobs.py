@@ -78,30 +78,6 @@ async def retry_failed_notifications(context: ContextTypes.DEFAULT_TYPE) -> None
         logger.info("Retried notification id=%d", notif["id"])
 
 
-async def confirmation_check(context: ContextTypes.DEFAULT_TYPE) -> None:
-    today_str = datetime.today().strftime("%Y-%m-%d")
-    schedules = scheduler_service.get_schedules_by_date(today_str)
-    if not schedules:
-        return
-
-    chat_ids = [c.strip() for c in CHAT_IDS.split(",") if c.strip()]
-    for s in schedules:
-        if s["status"] != "deployed":
-            chat_id = s.get("chat_id") or (chat_ids[0] if chat_ids else None)
-            if not chat_id:
-                continue
-            today_display = datetime.today().strftime("%d/%m")
-            msg = (
-                f"🔔 Nhắc nhở: Bạn chưa xác nhận trực hôm nay ({today_display}).\n"
-                f"Dùng /confirm {s['id']} để xác nhận."
-            )
-            try:
-                await context.bot.send_message(chat_id=int(chat_id), text=msg)
-                logger.info("Confirmation check sent for schedule id=%d", s["id"])
-            except Exception as e:
-                logger.error("Failed to send confirmation check: %s", e)
-
-
 async def tomorrow_reminder(context: ContextTypes.DEFAULT_TYPE) -> None:
     tomorrow = (datetime.today() + timedelta(days=1)).strftime("%Y-%m-%d")
     schedules = scheduler_service.get_schedules_by_date(tomorrow)
@@ -137,6 +113,5 @@ def setup_jobs(app: Application) -> None:
     job_queue.run_daily(tomorrow_reminder, time=time(18, 0), days=tuple(range(7)), name="tomorrow_reminder")
     job_queue.run_daily(weekly_approval_check, time=time(18, 0), days=(4,), name="weekly_approval_check")
     job_queue.run_repeating(retry_failed_notifications, interval=1800, first=10, name="retry_notifications")
-    job_queue.run_daily(confirmation_check, time=time(20, 0), days=tuple(range(7)), name="confirmation_check")
 
     logger.info("Jobs setup complete")
